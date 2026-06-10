@@ -40,14 +40,16 @@ echo "Apa yang ingin Anda instal hari ini?"
 echo "  [1] Install MantaCil Panel Saja"
 echo "  [2] Install MantaCil Wings Saja"
 echo "  [3] Install Keduanya (Panel + Wings + Egg WhatsApp)"
+echo "  [4] Install MantaCil Security Toolkit (Anti-DDoS & Auto-Suspend)"
 echo -e "${BLUE}=======================================================${NC}"
 
-read -p "Pilih [1/2/3]: " INSTALL_CHOICE
+read -p "Pilih [1/2/3/4]: " INSTALL_CHOICE
 
 case "$INSTALL_CHOICE" in
-    1) DO_PANEL=true; DO_WINGS=false ;;
-    2) DO_PANEL=false; DO_WINGS=true ;;
-    3) DO_PANEL=true; DO_WINGS=true ;;
+    1) DO_PANEL=true; DO_WINGS=false; DO_SEC=false ;;
+    2) DO_PANEL=false; DO_WINGS=true; DO_SEC=false ;;
+    3) DO_PANEL=true; DO_WINGS=true; DO_SEC=false ;;
+    4) DO_PANEL=false; DO_WINGS=false; DO_SEC=true ;;
     *) print_error "Pilihan tidak valid!"; exit 1 ;;
 esac
 
@@ -81,6 +83,9 @@ if [ "$DO_PANEL" = true ]; then
 fi
 if [ "$DO_WINGS" = true ]; then
     echo "Wings: Yes (Port 8080/2022)"
+fi
+if [ "$DO_SEC" = true ]; then
+    echo "Security Toolkit: Yes (Anti-DDoS Cronjob)"
 fi
 echo ""
 read -p "Apakah data di atas sudah benar dan ingin memulai instalasi? [y/N]: " CONFIRM
@@ -262,6 +267,20 @@ EOF
 }
 
 # ==========================================
+# FUNCTION: INSTALL SECURITY TOOLKIT
+# ==========================================
+install_security() {
+    print_info "Menginstal MantaCil Security Toolkit..."
+    wget -qO /usr/local/bin/mantacil-security.sh https://raw.githubusercontent.com/aisantri17/mantacil-installer/main/mantacil-security.sh
+    chmod +x /usr/local/bin/mantacil-security.sh
+    
+    print_info "Menyiapkan Cronjob Security (Berjalan setiap 5 menit)..."
+    (crontab -l 2>/dev/null | grep -v "mantacil-security.sh"; echo "*/5 * * * * /usr/local/bin/mantacil-security.sh") | crontab -
+    
+    print_success "Security Toolkit berhasil diinstal! Log akan tersimpan di /var/log/mantacil_security.log"
+}
+
+# ==========================================
 # EXECUTION
 # ==========================================
 clear
@@ -276,6 +295,10 @@ fi
 
 if [ "$DO_WINGS" = true ]; then
     install_wings
+fi
+
+if [ "$DO_SEC" = true ]; then
+    install_security
 fi
 
 echo ""
