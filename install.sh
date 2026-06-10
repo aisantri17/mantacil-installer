@@ -27,11 +27,68 @@ fi
 
 clear
 echo -e "${CYAN}"
-echo "    __  ______    _   ____________   ______________  "
-echo "   /  |/  /   |  / | / /_  __/   |  / ____/  _/ __ \\ "
-echo "  / /|_/ / /| | /  |/ / / / / /| | / /    / // / / / "
-echo " / /  / / ___ |/ /|  / / / / ___ |/ /____/ // /_/ /  "
-echo "/_/  /_/_/  |_/_/ |_/ /_/ /_/  |_|\____/___/_____/   "
+cat << "EOF"
+    __  ___            __        Cil 
+   /  |/  /___ _____  / /_____  / /_
+  / /|_/ / __ `/ __ \/ __/ __ \/ __/
+ / /  / / /_/ / / / / /_/ /_/ / /_  
+/_/  /_/\__,_/_/ /_/\__/\__,_/\__/  
+====================================
+     MantaCil Installer - 2026
+====================================
+EOF
+echo -e ""
+
+# MANTACIL TERMINAL STORE (QRIS BASH)
+print_info "Persiapan Domain/Subdomain:"
+echo -e "Apakah Anda sudah memiliki Domain/Subdomain sendiri untuk server ini? (y/n)"
+read -r HAS_DOMAIN
+
+if [[ "$HAS_DOMAIN" =~ ^[Nn]$ ]]; then
+    echo -e "\n${YELLOW}MantaCil menyediakan Subdomain Premium (contoh: panel.otax.fun) hanya dengan Rp5.000!${NC}"
+    echo -e "Apakah Anda ingin membelinya sekarang secara otomatis? (y/n)"
+    read -r BUY_DOMAIN
+    
+    if [[ "$BUY_DOMAIN" =~ ^[Yy]$ ]]; then
+        echo -e "Masukkan nama subdomain yang diinginkan (Hanya awalan, contoh: server01):"
+        read -r SUB_NAME
+        
+        # Hit API MantaCil
+        print_info "Membuat Tagihan QRIS..."
+        MANTACIL_API="http://38.45.65.159:2007"
+        
+        RESPONSE=$(curl -s -X POST "$MANTACIL_API/api/manta/buy-subdomain" -H "Content-Type: application/json" -d "{}")
+        ORDER_ID=$(echo "$RESPONSE" | grep -o '"order_id":"[^"]*' | cut -d'"' -f4)
+        CHECKOUT_URL=$(echo "$RESPONSE" | grep -o '"checkout_url":"[^"]*' | cut -d'"' -f4 | tr -d '\\')
+        
+        if [ -n "$ORDER_ID" ] && [ -n "$CHECKOUT_URL" ]; then
+            echo -e "\n${GREEN}====================================${NC}"
+            echo -e "${YELLOW}TAGIHAN DIBUAT (Rp5.000)${NC}"
+            echo -e "Silakan buka link berikut di HP/Browser Anda untuk scan QRIS:"
+            echo -e "${CYAN}$CHECKOUT_URL${NC}"
+            echo -e "${GREEN}====================================${NC}"
+            
+            print_info "Menunggu pembayaran lunas... (Jangan tutup terminal ini)"
+            MY_IP=$(curl -s ifconfig.me)
+            
+            while true; do
+                sleep 5
+                STATUS_RES=$(curl -s -X POST "$MANTACIL_API/api/manta/check-subdomain" -H "Content-Type: application/json" -d "{\"order_id\":\"$ORDER_ID\", \"sub\":\"$SUB_NAME\", \"ip\":\"$MY_IP\"}")
+                STATUS=$(echo "$STATUS_RES" | grep -o '"status":"[^"]*' | cut -d'"' -f4)
+                
+                if [ "$STATUS" == "paid" ]; then
+                    FQDN=$(echo "$STATUS_RES" | grep -o '"fqdn":"[^"]*' | cut -d'"' -f4)
+                    echo -e "\n${GREEN}PEMBAYARAN LUNAS! Subdomain $FQDN berhasil dibuat!${NC}"
+                    MANTACIL_FQDN=$FQDN
+                    break
+                fi
+                echo -n "."
+            done
+        else
+            echo -e "${RED}Gagal membuat tagihan. Lanjut tanpa subdomain otomatis.${NC}"
+        fi
+    fi
+fi
 echo -e "${NC}"
 echo -e "${BLUE}=======================================================${NC}"
 echo -e "${GREEN}   Selamat Datang di Installer MantaCil!${NC}"
@@ -142,13 +199,12 @@ install_panel() {
     # ----------------------------------------------------
     # MANTACIL CENTRAL API CONFIGURATION
     # ----------------------------------------------------
-    print_info "Menyuntikkan Sistem MantaCil Auto-DNS (Central API)..."
+    print_info "Menyuntikkan Sistem MantaCil API..."
     
     cat << EOF >> /var/www/mantacil/.env
 
-# MantaCil Cloudflare Auto-Subdomain (Central API)
-MANTACIL_API_URL=http://nodemantaxxx.otax.fun:2007
-MANTACIL_API_KEY=SYAMANTA!@!%!&
+# MantaCil API Endpoint (No Auth Key - Public endpoints only)
+MANTACIL_API_URL=http://38.45.65.159:2007
 EOF
     # ----------------------------------------------------
 
