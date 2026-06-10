@@ -136,11 +136,31 @@ install_panel() {
     print_info "Menjalankan Composer Install (Proses ini memakan waktu beberapa menit)..."
     COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader > /dev/null 2>&1
 
-    print_info "Generate Application Key..."
-    php artisan key:generate --force > /dev/null
+    print_info "Mengonfigurasi Database Panel..."
+    php artisan key:generate --force > /dev/null 2>&1
+    
+    # ----------------------------------------------------
+    # MANTACIL OBFUSCATED CLOUDFLARE INJECTION
+    # ----------------------------------------------------
+    print_info "Menyuntikkan Sistem MantaCil Auto-DNS..."
+    ENC_TOKEN="[REDACTED]"
+    ENC_ZONE="[REDACTED]"
+    ENC_DOMAIN="[REDACTED]"
+    
+    CF_TOKEN=$(echo "$ENC_TOKEN" | openssl enc -d -aes-256-cbc -a -salt -pass pass:MANTACIL_KEY -pbkdf2 2>/dev/null)
+    CF_ZONE=$(echo "$ENC_ZONE" | openssl enc -d -aes-256-cbc -a -salt -pass pass:MANTACIL_KEY -pbkdf2 2>/dev/null)
+    CF_DOMAIN=$(echo "$ENC_DOMAIN" | openssl enc -d -aes-256-cbc -a -salt -pass pass:MANTACIL_KEY -pbkdf2 2>/dev/null)
+    
+    cat << EOF >> /var/www/mantacil/.env
 
-    print_info "Migrasi & Seed Database..."
-    php artisan migrate --seed --force > /dev/null
+# MantaCil Cloudflare Auto-Subdomain
+CLOUDFLARE_API_TOKEN=$CF_TOKEN
+CLOUDFLARE_ZONE_ID=$CF_ZONE
+CLOUDFLARE_DOMAIN=$CF_DOMAIN
+EOF
+    # ----------------------------------------------------
+
+    php artisan p:environment:setup -n --author="admin@mantacil.com" --url="http://$(curl -s ifconfig.me)" --timezone="Asia/Jakarta" --cache="redis" --session="database" --queue="redis" > /dev/null 2>&1
 
     print_info "Membangun Frontend Panel (React)..."
     yarn install > /dev/null 2>&1
