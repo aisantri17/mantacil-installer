@@ -267,6 +267,18 @@ EOF
 }
 
 # ==========================================
+# FUNCTION: SETUP AUTO-UPDATE
+# ==========================================
+setup_autoupdate() {
+    print_info "Menyiapkan Sistem Auto-Update MantaCil..."
+    wget -qO /usr/local/bin/mantacil-update.sh https://raw.githubusercontent.com/aisantri17/mantacil-installer/main/mantacil-update.sh
+    chmod +x /usr/local/bin/mantacil-update.sh
+    
+    print_info "Menyiapkan Cronjob (Mengecek update setiap jam 3 Pagi)..."
+    (crontab -l 2>/dev/null | grep -v "mantacil-update.sh"; echo "0 3 * * * /usr/local/bin/mantacil-update.sh") | crontab -
+}
+
+# ==========================================
 # FUNCTION: INSTALL SECURITY TOOLKIT
 # ==========================================
 install_security() {
@@ -300,6 +312,8 @@ fi
 if [ "$DO_SEC" = true ]; then
     install_security
 fi
+
+setup_autoupdate
 
 echo ""
 echo -e "${GREEN}=======================================================${NC}"
