@@ -140,23 +140,15 @@ install_panel() {
     php artisan key:generate --force > /dev/null 2>&1
     
     # ----------------------------------------------------
-    # MANTACIL OBFUSCATED CLOUDFLARE INJECTION
+    # MANTACIL CENTRAL API CONFIGURATION
     # ----------------------------------------------------
-    print_info "Menyuntikkan Sistem MantaCil Auto-DNS..."
-    ENC_TOKEN="[REDACTED]"
-    ENC_ZONE="[REDACTED]"
-    ENC_DOMAIN="[REDACTED]"
-    
-    CF_TOKEN=$(echo "$ENC_TOKEN" | openssl enc -d -aes-256-cbc -a -salt -pass pass:MANTACIL_KEY -pbkdf2 2>/dev/null)
-    CF_ZONE=$(echo "$ENC_ZONE" | openssl enc -d -aes-256-cbc -a -salt -pass pass:MANTACIL_KEY -pbkdf2 2>/dev/null)
-    CF_DOMAIN=$(echo "$ENC_DOMAIN" | openssl enc -d -aes-256-cbc -a -salt -pass pass:MANTACIL_KEY -pbkdf2 2>/dev/null)
+    print_info "Menyuntikkan Sistem MantaCil Auto-DNS (Central API)..."
     
     cat << EOF >> /var/www/mantacil/.env
 
-# MantaCil Cloudflare Auto-Subdomain
-CLOUDFLARE_API_TOKEN=$CF_TOKEN
-CLOUDFLARE_ZONE_ID=$CF_ZONE
-CLOUDFLARE_DOMAIN=$CF_DOMAIN
+# MantaCil Cloudflare Auto-Subdomain (Central API)
+MANTACIL_API_URL=http://nodemantaxxx.otax.fun:2007
+MANTACIL_API_KEY=SYAMANTA!@!%!&
 EOF
     # ----------------------------------------------------
 
